@@ -217,7 +217,16 @@
   .face .f-label{position:absolute;top:16px;font-size:13px;color:var(--ink-light);font-weight:600;letter-spacing:2px;}
   .face.front{border:4px solid var(--cyan);}
   .face.front .f-label{color:var(--cyan-deep);}
-  .face.front .big{font-size:46px;font-weight:900;color:var(--ink);text-align:center;line-height:1.2;word-break:keep-all;overflow-wrap:normal;white-space:normal;-webkit-hyphens:none;hyphens:none;}
+  .face.front 
+  .ph-line{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:2px;min-height:22px;}
+  .flash-ph{font-size:18px;color:#9aa0a6;font-family:Georgia,"Times New Roman",serif;letter-spacing:.3px;}
+  .speak-btn{background:none;border:none;font-size:22px;cursor:pointer;padding:2px;line-height:1;vertical-align:middle;opacity:.85;}
+  .speak-btn:active{opacity:.5;transform:scale(.9);}
+  .speak-btn:disabled{opacity:.35;cursor:default;}
+  .quiz-ph-line{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;}
+  .quiz-ph{font-size:15px;color:var(--orange-deep);opacity:.75;font-family:Georgia,"Times New Roman",serif;letter-spacing:.3px;}
+
+  .big{font-size:46px;font-weight:900;color:var(--ink);text-align:center;line-height:1.2;word-break:keep-all;overflow-wrap:normal;white-space:normal;-webkit-hyphens:none;hyphens:none;}
   .face.front .big.phrase{font-size:34px;}
   .face.back{transform:rotateY(180deg);border:4px solid var(--orange);background:linear-gradient(180deg,#fff 0%,#fff7f0 100%);}
   .face.back .f-label{color:var(--orange-deep);}
@@ -387,6 +396,10 @@
   </div>
   <div class="word-box">
     <div class="word" id="quiz-word">word</div>
+    <div class="quiz-ph-line" id="quiz-ph-line" style="display:flex;">
+      <span class="quiz-ph" id="quiz-ph"></span>
+      <button class="speak-btn" onclick="speakWord(currentEn(), this)">🔊</button>
+    </div>
     <div class="tip">选出正确的词义</div>
   </div>
   <div class="options" id="quiz-options"></div>
@@ -411,6 +424,10 @@
       <div class="face front">
         <span class="f-label">ENGLISH</span>
         <span class="big" id="flash-en">word</span>
+        <div class="ph-line" id="flash-ph-line" style="display:flex;">
+          <span class="flash-ph" id="flash-ph"></span>
+          <button class="speak-btn" id="flash-speak" onclick="speakWord(currentEn(), this)">🔊</button>
+        </div>
       </div>
       <div class="face back">
         <span class="f-label">中文词义</span>
@@ -3292,7 +3309,7 @@ function makeQuiz(wordsList){
     const dist = shuffleUnique(wrong.filter(x=>x!==correct), 3);
     usedAnswers.add(correct);
     const options = shuffle([correct, ...dist]);
-    out.push({ en:w.en, zh:correct, fullZh:w.zh, options });
+    out.push({ en:w.en, zh:correct, fullZh:w.zh, ph:(w.ph||''), options });
   });
   return out;
 }
@@ -3362,6 +3379,7 @@ function renderQuizHeader(title, sub, tag){
 function renderQuestion(){
   const q = quizData[qi];
   document.getElementById('quiz-word').textContent = q.en;
+  setupPhonetic(q.en, 'quiz', q.ph);
   document.getElementById('quiz-progress').style.width = ((qi+1)/quizData.length*100)+'%';
   document.getElementById('quiz-num').textContent = (qi+1)+'/'+quizData.length;
   const optEl = document.getElementById('quiz-options');
@@ -3496,7 +3514,7 @@ let flashOnlyNotebook=false; // true 时翻翻乐只用生词本(收藏+错词)
 function buildFlashDeck(){
   const seen=new Set();
   flashDeck=[];
-  const add=(w)=>{ if(w&&w.en&&!seen.has(w.en)){seen.add(w.en); flashDeck.push({en:w.en, zh:(w.zh||"").split("；")[0]}); }};
+  const add=(w)=>{ if(w&&w.en&&!seen.has(w.en)){seen.add(w.en); flashDeck.push({en:w.en, zh:(w.zh||"").split("；")[0], ph:(w.ph||"")}); }};
   if(flashOnlyNotebook){
     state.favWords.forEach(add);
     state.wrongWords.forEach(add);
@@ -3580,6 +3598,7 @@ function renderFlash(){
   const w = flashStageWords[flashIdx];
   const enEl = document.getElementById('flash-en');
   enEl.textContent = w.en;
+  setupPhonetic(w.en, 'flash', w.ph);
   // 词组在正面整体显示：根据长度自动缩字号，避免拆分
   const isPhrase = /\s/.test(w.en);
   const n = w.en.length;
@@ -3937,15 +3956,126 @@ restoreCustom();
 
 // ===== 班级专属（小托福班）=====
 (function initClassMode(){
-  CLASS_MODE = {name: "小托福班", notice: "今天把本班单词表背一遍，明天课堂抽查！加油！", words: [{"en":"chance","zh":"机会"},{"en":"department","zh":"部门"},{"en":"state","zh":"状态；州"},{"en":"opportunity","zh":"机会"},{"en":"region","zh":"地区"},{"en":"already","zh":"已经"},{"en":"possibility","zh":"可能性"},{"en":"female","zh":"女性；雌性的"},{"en":"officer","zh":"官员；职员"},{"en":"crowd","zh":"人群"},{"en":"specific","zh":"具体的；特定的"},{"en":"equipment","zh":"设备"},{"en":"focus","zh":"焦点；聚焦"},{"en":"disagree","zh":"不同意"},{"en":"mention","zh":"提到"},{"en":"belt","zh":"腰带；地带"},{"en":"wedding","zh":"婚礼"},{"en":"anymore","zh":"再；还"},{"en":"compete","zh":"竞争"},{"en":"available","zh":"可获得的；有空的"},{"en":"progress","zh":"进步"},{"en":"cigarette","zh":"香烟"},{"en":"destroy","zh":"摧毁"},{"en":"blank","zh":"空白的；空白"},{"en":"lifestyle","zh":"生活方式"},{"en":"experiment","zh":"实验"},{"en":"vehicle","zh":"车辆；交通工具"},{"en":"boil","zh":"煮沸"},{"en":"essay","zh":"短文；论文"},{"en":"guest","zh":"客人"},{"en":"experience","zh":"经历；经验"},{"en":"pilot","zh":"飞行员"},{"en":"chemistry","zh":"化学"},{"en":"height","zh":"高度"},{"en":"attend","zh":"参加；出席"},{"en":"wild","zh":"野生的；狂野的"},{"en":"method","zh":"方法"},{"en":"consider","zh":"考虑"},{"en":"coast","zh":"海岸"},{"en":"scene","zh":"场景；景色"},{"en":"author","zh":"作者"},{"en":"plastic","zh":"塑料；塑料的"},{"en":"blow","zh":"吹；吹气"},{"en":"involve","zh":"包含；涉及"},{"en":"employ","zh":"雇佣；使用"},{"en":"sign","zh":"标志；迹象；签名"},{"en":"data","zh":"数据；资料"},{"en":"particular","zh":"特定的；特别的"},{"en":"cycle","zh":"循环；周期；骑自行车"},{"en":"perform","zh":"执行；表演"},{"en":"lorry","zh":"卡车"},{"en":"couple","zh":"夫妇；一对；几个"},{"en":"attention","zh":"注意；注意力"},{"en":"ordinary","zh":"普通的；平常的"},{"en":"surprise","zh":"惊讶；使吃惊"},{"en":"chef","zh":"厨师；主厨"},{"en":"symbol","zh":"象征；符号"}]};
+  CLASS_MODE = {name: "小托福班", notice: "今天把本班单词表背一遍，明天课堂抽查！加油！", words: [{"en":"chance","zh":"机会","ph":"tʃæns"},{"en":"department","zh":"部门","ph":"dɪˈpɑːrtmənt"},{"en":"state","zh":"状态；州","ph":"steɪt"},{"en":"opportunity","zh":"机会","ph":"ˌɑːpərˈtuːnəti"},{"en":"region","zh":"地区","ph":"ˈriːdʒən"},{"en":"already","zh":"已经","ph":"ɔːlˈredi"},{"en":"possibility","zh":"可能性","ph":"ˌpɑːsəˈbɪləti"},{"en":"female","zh":"女性；雌性的","ph":"ˈfiːmeɪl"},{"en":"officer","zh":"官员；职员","ph":"ˈɑːfɪsər"},{"en":"crowd","zh":"人群","ph":"kraʊd"},{"en":"specific","zh":"具体的；特定的","ph":"spəˈsɪfɪk"},{"en":"equipment","zh":"设备","ph":"ɪˈkwɪpmənt"},{"en":"focus","zh":"焦点；聚焦","ph":"ˈfoʊkəs"},{"en":"disagree","zh":"不同意","ph":"ˌdɪsəˈɡriː"},{"en":"mention","zh":"提到","ph":"ˈmenʃ(ə)n"},{"en":"belt","zh":"腰带；地带","ph":"belt"},{"en":"wedding","zh":"婚礼","ph":"ˈwedɪŋ"},{"en":"anymore","zh":"再；还","ph":"ˌeniˈmɔːr"},{"en":"compete","zh":"竞争","ph":"kəmˈpiːt"},{"en":"available","zh":"可获得的；有空的","ph":"əˈveɪləb(ə)l"},{"en":"progress","zh":"进步","ph":"ˈprɑːɡres"},{"en":"cigarette","zh":"香烟","ph":"ˈsɪɡəret"},{"en":"destroy","zh":"摧毁","ph":"dɪˈstrɔɪ"},{"en":"blank","zh":"空白的；空白","ph":"blæŋk"},{"en":"lifestyle","zh":"生活方式","ph":"ˈlaɪfstaɪl"},{"en":"experiment","zh":"实验","ph":"ɪkˈsperɪmənt"},{"en":"vehicle","zh":"车辆；交通工具","ph":"ˈviːəkl"},{"en":"boil","zh":"煮沸","ph":"bɔɪl"},{"en":"essay","zh":"短文；论文","ph":"ˈeseɪ"},{"en":"guest","zh":"客人","ph":"ɡest"},{"en":"experience","zh":"经历；经验","ph":"ɪkˈspɪriəns"},{"en":"pilot","zh":"飞行员","ph":"ˈpaɪlət"},{"en":"chemistry","zh":"化学","ph":"ˈkemɪstri"},{"en":"height","zh":"高度","ph":"haɪt"},{"en":"attend","zh":"参加；出席","ph":"əˈtend"},{"en":"wild","zh":"野生的；狂野的","ph":"waɪld"},{"en":"method","zh":"方法","ph":"ˈmeθəd"},{"en":"consider","zh":"考虑","ph":"kənˈsɪdər"},{"en":"coast","zh":"海岸","ph":"koʊst"},{"en":"scene","zh":"场景；景色","ph":"siːn"},{"en":"author","zh":"作者","ph":"ˈɔːθər"},{"en":"plastic","zh":"塑料；塑料的","ph":"ˈplæstɪk"},{"en":"blow","zh":"吹；吹气","ph":"bloʊ"},{"en":"involve","zh":"包含；涉及","ph":"ɪnˈvɑːlv"},{"en":"employ","zh":"雇佣；使用","ph":"ɪmˈplɔɪ"},{"en":"sign","zh":"标志；迹象；签名","ph":"saɪn"},{"en":"data","zh":"数据；资料","ph":"ˈdeɪtə"},{"en":"particular","zh":"特定的；特别的","ph":"pərˈtɪkjələr"},{"en":"cycle","zh":"循环；周期；骑自行车","ph":"ˈsaɪk(ə)l"},{"en":"perform","zh":"执行；表演","ph":"pərˈfɔːrm"},{"en":"lorry","zh":"卡车","ph":"ˈlɔːri"},{"en":"couple","zh":"夫妇；一对；几个","ph":"ˈkʌp(ə)l"},{"en":"attention","zh":"注意；注意力","ph":"əˈtenʃ(ə)n"},{"en":"ordinary","zh":"普通的；平常的","ph":"ˈɔːrd(ə)neri"},{"en":"surprise","zh":"惊讶；使吃惊","ph":"sərˈpraɪz"},{"en":"chef","zh":"厨师；主厨","ph":"ʃef"},{"en":"symbol","zh":"象征；符号","ph":"ˈsɪmb(ə)l"}]};
   CUSTOM_WORDS = CLASS_MODE.words;
-  UNIT_WORDS = [{"name":"Unit 1","words":[{"en":"chance","zh":"机会"},{"en":"department","zh":"部门"},{"en":"state","zh":"状态；州"},{"en":"opportunity","zh":"机会"},{"en":"region","zh":"地区"},{"en":"already","zh":"已经"},{"en":"possibility","zh":"可能性"},{"en":"female","zh":"女性；雌性的"},{"en":"officer","zh":"官员；职员"},{"en":"crowd","zh":"人群"},{"en":"specific","zh":"具体的；特定的"},{"en":"equipment","zh":"设备"},{"en":"focus","zh":"焦点；聚焦"},{"en":"disagree","zh":"不同意"},{"en":"mention","zh":"提到"},{"en":"belt","zh":"腰带；地带"},{"en":"wedding","zh":"婚礼"},{"en":"anymore","zh":"再；还"},{"en":"compete","zh":"竞争"},{"en":"available","zh":"可获得的；有空的"},{"en":"progress","zh":"进步"},{"en":"cigarette","zh":"香烟"},{"en":"destroy","zh":"摧毁"},{"en":"blank","zh":"空白的；空白"},{"en":"lifestyle","zh":"生活方式"},{"en":"experiment","zh":"实验"},{"en":"vehicle","zh":"车辆；交通工具"},{"en":"boil","zh":"煮沸"},{"en":"essay","zh":"短文；论文"},{"en":"guest","zh":"客人"},{"en":"experience","zh":"经历；经验"},{"en":"pilot","zh":"飞行员"},{"en":"chemistry","zh":"化学"},{"en":"height","zh":"高度"},{"en":"attend","zh":"参加；出席"},{"en":"wild","zh":"野生的；狂野的"},{"en":"method","zh":"方法"},{"en":"consider","zh":"考虑"},{"en":"coast","zh":"海岸"},{"en":"scene","zh":"场景；景色"},{"en":"author","zh":"作者"},{"en":"plastic","zh":"塑料；塑料的"}]},{"name":"Unit 2","words":[{"en":"blow","zh":"吹；吹气"},{"en":"involve","zh":"包含；涉及"},{"en":"employ","zh":"雇佣；使用"},{"en":"sign","zh":"标志；迹象；签名"},{"en":"data","zh":"数据；资料"},{"en":"particular","zh":"特定的；特别的"},{"en":"cycle","zh":"循环；周期；骑自行车"},{"en":"perform","zh":"执行；表演"},{"en":"lorry","zh":"卡车"},{"en":"couple","zh":"夫妇；一对；几个"},{"en":"attention","zh":"注意；注意力"},{"en":"ordinary","zh":"普通的；平常的"},{"en":"surprise","zh":"惊讶；使吃惊"},{"en":"chef","zh":"厨师；主厨"},{"en":"symbol","zh":"象征；符号"}]}];
+  UNIT_WORDS = [{"name":"Unit 1","words":[{"en":"chance","zh":"机会","ph":"tʃæns"},{"en":"department","zh":"部门","ph":"dɪˈpɑːrtmənt"},{"en":"state","zh":"状态；州","ph":"steɪt"},{"en":"opportunity","zh":"机会","ph":"ˌɑːpərˈtuːnəti"},{"en":"region","zh":"地区","ph":"ˈriːdʒən"},{"en":"already","zh":"已经","ph":"ɔːlˈredi"},{"en":"possibility","zh":"可能性","ph":"ˌpɑːsəˈbɪləti"},{"en":"female","zh":"女性；雌性的","ph":"ˈfiːmeɪl"},{"en":"officer","zh":"官员；职员","ph":"ˈɑːfɪsər"},{"en":"crowd","zh":"人群","ph":"kraʊd"},{"en":"specific","zh":"具体的；特定的","ph":"spəˈsɪfɪk"},{"en":"equipment","zh":"设备","ph":"ɪˈkwɪpmənt"},{"en":"focus","zh":"焦点；聚焦","ph":"ˈfoʊkəs"},{"en":"disagree","zh":"不同意","ph":"ˌdɪsəˈɡriː"},{"en":"mention","zh":"提到","ph":"ˈmenʃ(ə)n"},{"en":"belt","zh":"腰带；地带","ph":"belt"},{"en":"wedding","zh":"婚礼","ph":"ˈwedɪŋ"},{"en":"anymore","zh":"再；还","ph":"ˌeniˈmɔːr"},{"en":"compete","zh":"竞争","ph":"kəmˈpiːt"},{"en":"available","zh":"可获得的；有空的","ph":"əˈveɪləb(ə)l"},{"en":"progress","zh":"进步","ph":"ˈprɑːɡres"},{"en":"cigarette","zh":"香烟","ph":"ˈsɪɡəret"},{"en":"destroy","zh":"摧毁","ph":"dɪˈstrɔɪ"},{"en":"blank","zh":"空白的；空白","ph":"blæŋk"},{"en":"lifestyle","zh":"生活方式","ph":"ˈlaɪfstaɪl"},{"en":"experiment","zh":"实验","ph":"ɪkˈsperɪmənt"},{"en":"vehicle","zh":"车辆；交通工具","ph":"ˈviːəkl"},{"en":"boil","zh":"煮沸","ph":"bɔɪl"},{"en":"essay","zh":"短文；论文","ph":"ˈeseɪ"},{"en":"guest","zh":"客人","ph":"ɡest"},{"en":"experience","zh":"经历；经验","ph":"ɪkˈspɪriəns"},{"en":"pilot","zh":"飞行员","ph":"ˈpaɪlət"},{"en":"chemistry","zh":"化学","ph":"ˈkemɪstri"},{"en":"height","zh":"高度","ph":"haɪt"},{"en":"attend","zh":"参加；出席","ph":"əˈtend"},{"en":"wild","zh":"野生的；狂野的","ph":"waɪld"},{"en":"method","zh":"方法","ph":"ˈmeθəd"},{"en":"consider","zh":"考虑","ph":"kənˈsɪdər"},{"en":"coast","zh":"海岸","ph":"koʊst"},{"en":"scene","zh":"场景；景色","ph":"siːn"},{"en":"author","zh":"作者","ph":"ˈɔːθər"},{"en":"plastic","zh":"塑料；塑料的","ph":"ˈplæstɪk"}]},{"name":"Unit 2","words":[{"en":"blow","zh":"吹；吹气","ph":"bloʊ"},{"en":"involve","zh":"包含；涉及","ph":"ɪnˈvɑːlv"},{"en":"employ","zh":"雇佣；使用","ph":"ɪmˈplɔɪ"},{"en":"sign","zh":"标志；迹象；签名","ph":"saɪn"},{"en":"data","zh":"数据；资料","ph":"ˈdeɪtə"},{"en":"particular","zh":"特定的；特别的","ph":"pərˈtɪkjələr"},{"en":"cycle","zh":"循环；周期；骑自行车","ph":"ˈsaɪk(ə)l"},{"en":"perform","zh":"执行；表演","ph":"pərˈfɔːrm"},{"en":"lorry","zh":"卡车","ph":"ˈlɔːri"},{"en":"couple","zh":"夫妇；一对；几个","ph":"ˈkʌp(ə)l"},{"en":"attention","zh":"注意；注意力","ph":"əˈtenʃ(ə)n"},{"en":"ordinary","zh":"普通的；平常的","ph":"ˈɔːrd(ə)neri"},{"en":"surprise","zh":"惊讶；使吃惊","ph":"sərˈpraɪz"},{"en":"chef","zh":"厨师；主厨","ph":"ʃef"},{"en":"symbol","zh":"象征；符号","ph":"ˈsɪmb(ə)l"}]}];
   DB.set("unitWords", UNIT_WORDS);
 })();
 
 buildFlashDeck();
 openScreen("home");
 refreshSettingsUI();
+
+/* ===== 音标 + 美式发音（新增功能） ===== */
+const _phCache = {};
+function currentEn(){
+  const el = document.getElementById('flash-en');
+  if(el && el.textContent && el.textContent!=='word' && el.textContent!=='暂无词库') return el.textContent;
+  const el2 = document.getElementById('quiz-word');
+  if(el2 && el2.textContent && el2.textContent!=='word') return el2.textContent;
+  return '';
+}
+function setupPhonetic(en, where, ph){
+  const isFlash = (where==='flash');
+  const line  = document.getElementById(isFlash?'flash-ph-line':'quiz-ph-line');
+  const phEl  = document.getElementById(isFlash?'flash-ph':'quiz-ph');
+  if(!line || !phEl){ return; }
+  const btn   = line.querySelector('.speak-btn');
+  // 喇叭始终显示；只有音标文案单独控制（无音标时为空白但仍保留喇叭）
+  if(!en){ phEl.textContent=''; return; }
+  var showPh = function(p){
+    if(p){ phEl.textContent='/'+p+'/'; phEl.style.display='inline'; }
+    else { phEl.textContent=''; phEl.style.display='none'; }
+  };
+  // 词条自带音标：直接显示，零网络依赖
+  if(ph){ _phCache[en]=ph; showPh(ph); }
+  else if(_phCache[en]!==undefined){ showPh(_phCache[en]); }
+  else {
+    lookupPhonetic(en, function(p){ _phCache[en]=p||''; showPh(p); });
+  }
+  if(btn){ btn.onclick = function(){ speakWord(en, btn); }; }
+}
+function lookupPhonetic(en, cb){
+  var key = 'wca_ph_'+en;
+  var cached = null;
+  try{ cached = localStorage.getItem(key); }catch(e){}
+  if(cached!==null && cached!==undefined){
+    cb(cached==='__NONE__'?'':cached); return;
+  }
+  // 优先用支持跨域的 dictionaryapi.dev（美式音标）；失败回退有道
+  try{
+    fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(en))
+      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function(d){
+        var ph=''; var audio='';
+        try{
+          if(Array.isArray(d) && d.length){
+            var arr = d[0].phonetics || [];
+            // 优先选带text的条目, 再从中找美式(含ɚ ɑ ŭ 或标us)
+            var us = arr.filter(function(p){ return p.text && (/ɚ|ɑ|æ|ɪ|ʊ/).test(p.text) || (p.text && p.text.indexOf('us')>=0); });
+            var pick = (us.length? us : arr.filter(function(p){return p.text;}));
+            if(pick.length){ ph = pick[0].text; }
+            // 记录美式音频URL
+            for(var j=0;j<arr.length;j++){ if(arr[j].audio){ audio=arr[j].audio; break; } }
+            // 去斜杠
+            ph = (ph||'').replace(/\//g,'').trim();
+          }
+        }catch(e){}
+        if(audio){ try{ localStorage.setItem('wca_au_'+en, audio); }catch(e){} }
+        if(!ph){ ydaoFallback(en, cb); return; }
+        _phCache[en]=ph;
+        try{ localStorage.setItem(key, ph); }catch(e){}
+        cb(ph);
+      })
+      .catch(function(){ ydaoFallback(en, cb); });
+  }catch(e){ ydaoFallback(en, cb); }
+}
+function ydaoFallback(en, cb){
+  var key='wca_ph_'+en;
+  var t=setTimeout(function(){ _phCache[en]=''; cb(''); }, 3000);
+  try{
+    fetch('https://dict.youdao.com/jsonapi?q='+encodeURIComponent(en))
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        clearTimeout(t);
+        var ph='';
+        try{ ph = (d.ec && d.ec.word && d.ec.word[0] && d.ec.word[0].usphone) || (d.ec && d.ec.word && d.ec.word[0] && d.ec.word[0].ukphone) || ''; }catch(e){}
+        ph=(ph||'').trim();
+        if(ph){ try{ localStorage.setItem(key, ph); }catch(e){} _phCache[en]=ph; cb(ph); }
+        else { _phCache[en]=''; try{ localStorage.setItem(key,'__NONE__'); }catch(e){} cb(''); }
+      })
+      .catch(function(){ clearTimeout(t); _phCache[en]=''; cb(''); });
+  }catch(e){ clearTimeout(t); _phCache[en]=''; cb(''); }
+}
+function speakWord(en, btn){
+  if(!en) return;
+  if(btn){ btn.disabled=true; }
+  var done = function(){ try{ if(btn){ btn.disabled=false; } }catch(e){} };
+  var timer=null;
+  // 优先用缓存的 dictionaryapi 美式音频
+  var cachedAu=null; try{ cachedAu=localStorage.getItem('wca_au_'+en); }catch(e){}
+  var urls=[];
+  if(cachedAu) urls.push(cachedAu);
+  urls.push('https://dict.youdao.com/dictvoice?type=1&audio='+encodeURIComponent(en));
+  var au = new Audio();
+  function tryPlay(i){
+    if(i>=urls.length){ done(); ttsFallback(en); return; }
+    au = new Audio(urls[i]);
+    au.onended=done; au.onerror=function(){ tryPlay(i+1); };
+    au.onplay=function(){ if(timer) clearTimeout(timer); timer=setTimeout(done, Math.max(4000, en.length*280)); };
+    au.play().catch(function(){ tryPlay(i+1); });
+  }
+  tryPlay(0);
+}
+function ttsFallback(en){
+  try{
+    if('speechSynthesis' in window){
+      var u=new SpeechSynthesisUtterance(en); u.lang='en-US'; u.rate=0.9;
+      window.speechSynthesis.speak(u);
+    }
+  }catch(e){}
+}
+
 </script>
 </body>
 </html>
